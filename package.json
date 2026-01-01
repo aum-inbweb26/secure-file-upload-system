@@ -1,0 +1,16 @@
+{
+  "name": "secure-upload-test",
+  "version": "1.0.0",
+  "description": "Secure file upload demonstration",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "file-type": "^18.7.0",
+    "uuid": "^9.0.1"
+  }
+}

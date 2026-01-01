@@ -1,0 +1,6 @@
+node_modules/
+uploads/
+test_payloads/
+safe_payloads/
+.env
+.DS_Store
