@@ -38,8 +38,10 @@ Access the test UI at `http://localhost:3000` or use Postman.
 ```
 secure-upload-test/
 ├── src/
-│   ├── server.js      # Main entry + Magic Byte validation
-│   └── upload.js      # Multer configuration (Extensions/MIME)
+│   ├── server.js        # Main entry + Magic Byte validation
+│   ├── common_config.js # Shared storage & constants
+│   ├── image_multer.js  # Image-specific configuration
+│   └── pdf_multer.js    # PDF-specific configuration
 ├── public/
 │   └── client.html    # Simple test frontend
 ├── docs/

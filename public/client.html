@@ -1,49 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure File Upload Test</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
-        h1 { border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
-        .upload-box { border: 2px dashed #ccc; padding: 2rem; text-align: center; border-radius: 8px; background: #f9f9f9; }
-        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 1rem; margin-top: 1rem; }
-        .btn:hover { background: #0056b3; }
-        #status { margin-top: 1rem; padding: 1rem; border-radius: 4px; display: none; }
-        .error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
-        .success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-        pre { background: #eee; padding: 1rem; overflow-x: auto; text-align: left; margin-top: 1rem; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            line-height: 1.5;
+        }
+
+        h1 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+
+        .upload-box {
+            border: 2px dashed #ccc;
+            padding: 2rem;
+            border-radius: 8px;
+            background: #f9f9f9;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        .btn-pdf {
+            background: #dc3545;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        #status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        pre {
+            background: #eee;
+            padding: 1rem;
+            overflow-x: auto;
+            text-align: left;
+            margin-top: 1rem;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
+
 <body>
     <h1>Secure File Upload Test</h1>
-    
+
+    <!-- Image Upload Form -->
     <div class="upload-box">
-        <form id="uploadForm">
-            <input type="file" name="file" id="fileInput" required>
-            <br>
-            <button type="submit" class="btn">Upload File</button>
+        <h3>🖼️ Image Upload (JPG, PNG)</h3>
+        <form id="imageForm">
+            <input type="file" name="file" required accept=".jpg,.jpeg,.png">
+            <button type="submit" class="btn">Upload Image</button>
+        </form>
+    </div>
+
+    <!-- PDF Upload Form -->
+    <div class="upload-box">
+        <h3>📄 PDF Upload</h3>
+        <form id="pdfForm">
+            <input type="file" name="file" required accept=".pdf">
+            <button type="submit" class="btn btn-pdf">Upload PDF</button>
         </form>
     </div>
 
     <div id="status"></div>
 
-    <h3>Test Cases Check:</h3>
-    <ul>
-        <li>✅ valid.pdf / valid.jpg</li>
-        <li>❌ shell.php.pdf (Double Extension)</li>
-        <li>❌ image.jpg.php (Executable Ext)</li>
-        <li>❌ fake.pdf (Renamed text file)</li>
-    </ul>
-
     <script>
-        const form = document.getElementById('uploadForm');
         const statusDiv = document.getElementById('status');
-        const fileInput = document.getElementById('fileInput');
 
-        form.addEventListener('submit', async (e) => {
+        async function handleUpload(e, endpoint) {
             e.preventDefault();
+            const fileInput = e.target.querySelector('input[type="file"]');
             const file = fileInput.files[0];
             if (!file) return;
 
@@ -55,7 +122,7 @@
             statusDiv.textContent = 'Uploading and scanning...';
 
             try {
-                const response = await fetch('/upload', {
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 });
@@ -74,7 +141,11 @@
                 statusDiv.textContent = 'Network or Server Error';
                 console.error(err);
             }
-        });
+        }
+
+        document.getElementById('imageForm').addEventListener('submit', (e) => handleUpload(e, '/upload/image'));
+        document.getElementById('pdfForm').addEventListener('submit', (e) => handleUpload(e, '/upload/pdf'));
     </script>
 </body>
+
 </html>

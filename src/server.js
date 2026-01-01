@@ -3,7 +3,8 @@ import { fileTypeFromFile } from 'file-type';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
-import { upload } from './upload.js';
+import { imageUpload } from './image_multer.js';
+import { pdfUpload } from './pdf_multer.js';
 
 const app = express();
 const PORT = 3000;
@@ -19,50 +20,29 @@ app.get('/', (req, res) => {
     res.sendFile(path.resolve('public/client.html'));
 });
 
-// Upload Endpoint
-app.post('/upload', (req, res) => {
-    // Wrap multer in a promise-like structure or just callback to handle errors cleanly
-    const uploader = upload.single('file');
+// Reusable Validation Handler
+const handleUpload = (req, res, allowedMimes) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+    }
 
-    uploader(req, res, async (err) => {
-        // 1. Handle Multer Errors (Size limit, FileFilter rejection)
-        if (err) {
-            console.error('Upload blocked:', err.message);
-            return res.status(400).json({ error: err.message });
-        }
+    const filePath = req.file.path;
 
-        if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded.' });
-        }
-
-        const filePath = req.file.path;
-
+    (async () => {
         try {
-            // 2. Magic Byte Validation (The "Truth" check)
-            // file-type inspects the file header bytes
+            // Magic Byte Validation
             const typeInfo = await fileTypeFromFile(filePath);
 
-            // If file-type cannot determine type (e.g. text file renamed to .pdf), it returns undefined
             if (!typeInfo) {
                 throw new Error('Could not determine file signature. Possible fake file.');
             }
 
-            // 3. Validate Magic Byte Signature against Allowed Types
-            const allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
             if (!allowedMimes.includes(typeInfo.mime)) {
                 throw new Error(`Magic-byte check failed. Detected: ${typeInfo.mime}`);
             }
 
-            // 4. Validate Extension Match
-            // Ensure the detected extension matches the file extension (prevent spoofing)
-            // Note: file-type returns 'jpg' for jpeg logic. 
-            // We can trust the MIME check primarily.
-            // But let's check basic consistency if needed. 
-            // For now, strict MIME allowlist is usually sufficient for executables.
-
             console.log(`Valid file uploaded: ${req.file.filename} detected as ${typeInfo.mime}`);
 
-            // 5. Success
             return res.status(200).json({
                 message: 'File successfully uploaded and verified secure.',
                 filename: req.file.filename,
@@ -71,29 +51,41 @@ app.post('/upload', (req, res) => {
             });
 
         } catch (validationError) {
-            // SECURITY FAIL: Delete the file immediately
             console.error('Security Validation Failed:', validationError.message);
-
             try {
                 await fs.unlink(filePath);
-                console.log('Malicious/Invalid file deleted.');
-            } catch (unlinkErr) {
-                console.error('Failed to delete invalid file:', unlinkErr);
-            }
+            } catch (unlinkErr) { console.error(unlinkErr); }
 
-            return res.status(400).json({ error: parseErrorMessage(validationError.message) });
+            return res.status(400).json({ error: 'Security validation failed: ' + validationError.message });
         }
+    })();
+};
+
+// Endpoint 1: Image Upload (JPG/PNG)
+app.post('/upload/image', (req, res) => {
+    const uploader = imageUpload.single('file');
+    uploader(req, res, (err) => {
+        if (err) return res.status(400).json({ error: err.message });
+        handleUpload(req, res, ['image/jpeg', 'image/png']);
     });
 });
 
-function parseErrorMessage(msg) {
-    // Return safe error messages to client
-    if (msg.includes('Magic-byte')) return 'File content does not match extension (Magic Byte Mismatch).';
-    if (msg.includes('Could not determine')) return 'File content looks suspicious or corrupted.';
-    return msg;
-}
+// Endpoint 2: PDF Upload
+app.post('/upload/pdf', (req, res) => {
+    const uploader = pdfUpload.single('file');
+    uploader(req, res, (err) => {
+        if (err) return res.status(400).json({ error: err.message });
+        handleUpload(req, res, ['application/pdf']);
+    });
+});
+
+// Legacy Endpoint (Optional: supports both if needed, but easier to deprecate)
+// For now, we will map /upload to /upload/image for backward compat in this test or just 404
+// Let's keep it simple and update Client to use specific routes.
 
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
-    console.log('Uploads stored in:', UPLOAD_DIR);
+    console.log('Endpoints:');
+    console.log(' - POST /upload/image');
+    console.log(' - POST /upload/pdf');
 });

@@ -102,7 +102,11 @@ Periodic security testing using the provided test scripts is mandatory after any
 
 ### Incident: "Upload Blocked"
 *   **Cause:** File extension or MIME type is not in the strictly allowed list.
-*   **Action:** If a new file type is business-critical (e.g., `.docx`), update **both** `upload.js` (extension list) and `server.js` (magic byte list).
+### Incident: "Upload Blocked"
+*   **Cause:** File extension or MIME type is not in the strictly allowed list.
+### Incident: "Upload Blocked"
+*   **Cause:** File extension or MIME type is not in the strictly allowed list.
+*   **Action:** If a new file type is business-critical (e.g., `.docx`), update **both** the specific multer config (e.g., `src/pdf_multer.js`) and `src/server.js` (magic byte list).
 
 ---
 
